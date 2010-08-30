@@ -9,7 +9,7 @@ dojo.provide('template.mustache._base');
 
 	var Mustache = function() {
 	  var Renderer = function() {};
-	
+
 	  Renderer.prototype = {
 	    otag: "{{",
 	    ctag: "}}",
@@ -19,14 +19,14 @@ dojo.provide('template.mustache._base');
 	      "IMPLICIT-ITERATOR": true
 	    },
 	    context: {},
-	
+
 	    render: function(template, context, partials, in_recursion) {
 	      // reset buffer & set context
 	      if(!in_recursion) {
 	        this.context = context;
 	        this.buffer = []; // TODO: make this non-lazy
 	      }
-	
+
 	      // fail fast
 	      if(!this.includes("", template)) {
 	        if(in_recursion) {
@@ -36,16 +36,16 @@ dojo.provide('template.mustache._base');
 	          return;
 	        }
 	      }
-	
+
 	      template = this.render_pragmas(template);
 	      var html = this.render_section(template, context, partials);
 	      if(in_recursion) {
 	        return this.render_tags(html, context, partials, in_recursion);
 	      }
-	
+
 	      this.render_tags(html, context, partials, in_recursion);
 	    },
-	
+
 	    /*
 	      Sends parsed lines
 	    */
@@ -54,7 +54,7 @@ dojo.provide('template.mustache._base');
 	        this.buffer.push(line);
 	      }
 	    },
-	
+
 	    /*
 	      Looks for %PRAGMAS
 	    */
@@ -63,13 +63,13 @@ dojo.provide('template.mustache._base');
 	      if(!this.includes("%", template)) {
 	        return template;
 	      }
-	
+
 	      var that = this;
 	      var regex = new RegExp(this.otag + "%([\\w-]+) ?([\\w]+=[\\w]+)?" +
 	            this.ctag);
 	      return template.replace(regex, function(match, pragma, options) {
 	        if(!that.pragmas_implemented[pragma]) {
-	          throw({message: 
+	          throw({message:
 	            "This implementation of mustache doesn't understand the '" +
 	            pragma + "' pragma"});
 	        }
@@ -82,7 +82,7 @@ dojo.provide('template.mustache._base');
 	        // ignore unknown pragmas silently
 	      });
 	    },
-	
+
 	    /*
 	      Tries to find a partial in the curent scope and render it
 	    */
@@ -96,7 +96,7 @@ dojo.provide('template.mustache._base');
 	      }
 	      return this.render(partials[name], context[name], partials, true);
 	    },
-	
+
 	    /*
 	      Renders inverted (^) and normal (#) sections
 	    */
@@ -104,13 +104,13 @@ dojo.provide('template.mustache._base');
 	      if(!this.includes("#", template) && !this.includes("^", template)) {
 	        return template;
 	      }
-	
+
 	      var that = this;
 	      // CSW - Added "+?" so it finds the tighest bound, not the widest
 	      var regex = new RegExp(this.otag + "(\\^|\\#)\\s*(.+)\\s*" + this.ctag +
 	              "\n*([\\s\\S]+?)" + this.otag + "\\/\\s*\\2\\s*" + this.ctag +
 	              "\\s*", "mg");
-	
+
 	      // for each {{#foo}}{{/foo}} section do...
 	      return template.replace(regex, function(match, type, name, content) {
 	        var value = that.find(name, context);
@@ -143,19 +143,19 @@ dojo.provide('template.mustache._base');
 	        }
 	      });
 	    },
-	
+
 	    /*
 	      Replace {{foo}} and friends with values from our view
 	    */
 	    render_tags: function(template, context, partials, in_recursion) {
 	      // tit for tat
 	      var that = this;
-	
+
 	      var new_regex = function() {
 	        return new RegExp(that.otag + "(=|!|>|\\{|%)?([^\\/#\\^]+?)\\1?" +
 	          that.ctag + "+", "g");
 	      };
-	
+
 	      var regex = new_regex();
 	      var tag_replace_callback = function(match, operator, name) {
 	        switch(operator) {
@@ -180,18 +180,18 @@ dojo.provide('template.mustache._base');
 	          this.send(lines[i]);
 	        }
 	      }
-	
+
 	      if(in_recursion) {
 	        return lines.join("\n");
 	      }
 	    },
-	
+
 	    set_delimiters: function(delimiters) {
 	      var dels = delimiters.split(" ");
 	      this.otag = this.escape_regex(dels[0]);
 	      this.ctag = this.escape_regex(dels[1]);
 	    },
-	
+
 	    escape_regex: function(text) {
 	      // thank you Simon Willison
 	      if(!arguments.callee.sRE) {
@@ -205,26 +205,26 @@ dojo.provide('template.mustache._base');
 	      }
 	      return text.replace(arguments.callee.sRE, '\\$1');
 	    },
-	
+
 	    /*
 	      find `name` in current `context`. That is find me a value
 	      from the view object
 	    */
 	    find: function(name, context) {
 	      name = this.trim(name);
-	
+
 	      // Checks whether a value is thruthy or false or 0
 	      function is_kinda_truthy(bool) {
 	        return bool === false || bool === 0 || bool;
 	      }
-	
+
 	      var value;
 	      if(is_kinda_truthy(context[name])) {
 	        value = context[name];
 	      } else if(is_kinda_truthy(this.context[name])) {
 	        value = this.context[name];
 	      }
-	
+
 	      if(typeof value === "function") {
 	        return value.apply(context);
 	      }
@@ -234,14 +234,14 @@ dojo.provide('template.mustache._base');
 	      // silently ignore unkown variables
 	      return "";
 	    },
-	
+
 	    // Utility methods
-	
+
 	    /* includes tag */
 	    includes: function(needle, haystack) {
 	      return haystack.indexOf(this.otag + needle) != -1;
 	    },
-	
+
 	    /*
 	      Does away with nasty characters
 	    */
@@ -258,7 +258,7 @@ dojo.provide('template.mustache._base');
 	        }
 	      });
 	    },
-	
+
 	    // by @langalex, support for arrays of strings
 	    create_context: function(_context) {
 	      if(this.is_object(_context)) {
@@ -273,22 +273,22 @@ dojo.provide('template.mustache._base');
 	        return ctx;
 	      }
 	    },
-	
+
 	    is_object: function(a) {
 	      return a && typeof a == "object";
 	    },
-	
+
 	    is_array: function(a) {
 	      return Object.prototype.toString.call(a) === '[object Array]';
 	    },
-	
+
 	    /*
 	      Gets rid of leading and trailing whitespace
 	    */
 	    trim: function(s) {
 	      return s.replace(/^\s*|\s*$/g, "");
 	    },
-	
+
 	    /*
 	      Why, why, why? Because IE. Cry, cry cry.
 	    */
@@ -305,11 +305,11 @@ dojo.provide('template.mustache._base');
 	      }
 	    }
 	  };
-	
+
 	  return({
 	    name: "mustache.js",
 	    version: "0.3.1-dev",
-	
+
 	    /*
 	      Turns a template and view into HTML
 	    */
@@ -325,6 +325,6 @@ dojo.provide('template.mustache._base');
 	    }
 	  });
 	}();
-	
+
 	template.mustache = dojo.hitch(Mustache, "to_html");
 })();

@@ -3,10 +3,10 @@
     <head>
     	<meta charset="utf-8" />
         <title>templates</title>
-		
+
 		<link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dojo/resources/dojo.css">
 		<link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dijit/themes/claro/claro.css">
-		
+
 		<script>
 			var djConfig = {
 				baseUrl: './',
@@ -17,71 +17,113 @@
 		</script>
 
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dojo/dojo.xd.js"></script>
-		
+
 		<script>
 			dojo.require('template.Dijit');
 			dojo.require('template.DtlDom');
 			dojo.require('template.DtlString');
 			dojo.require('template.Mustache');
-			
+
 			var test = {},
 				d = dojo;
-			
+
 			function time(fn, label) {
 				var start = new Date().getTime(),
 					dfd = new d.Deferred();
-				fn();
-				setTimeout(function() {
-					var end = new Date().getTime(), result = (end - start) / 1000;
-					console.log(label, ' ', result);
-					dfd.resolve();
-				}, 0);
+
+				// if fn returns a Deferred then measure how long it takes to resolve
+				d.when(fn(), function () {
+					// use a setTimeout to allow the browser to render any changes from fn
+					setTimeout(function() {
+						var end = new Date().getTime(), result = (end - start) / 1000;
+						if (label) {
+							console.log(label, ' ', result)
+						};
+						// indicate that this test is now complete
+						dfd.resolve();
+					}, 0);
+				});
+
+				// return a Deferred to show when this test has completed
 				return dfd;
 			}
-			
+
 			d.mixin(test, {
 				init: function() {
+					// add a button that uses dijit._Templated and attributeMap
 					time(function() {
 						test.dijit = new template.Dijit({
 							label: 'dijit._Templated'
 						}).placeAt('dijit');
 					}, 'creating dijit._Templated button').then(function() {
+						// add a button that uses dojox.dtl._DomTemplated (DOM templating)
 						return time(function() {
 							test.dtlDom = new template.DtlDom({
 								label: 'dtl DOM template'
 							}, d.create('div', null, 'dtlDom'));
 						}, 'creating dtl _DomTemplated button');
 					}).then(function() {
+						// add a button that uses dojox.dtl._Templated (string templating)
 						return time(function() {
 							test.dtlString = new template.DtlString({
 								label: 'dtl String template'
 							}).placeAt('dtlString');
 						}, 'creating dtl _Templated button');
 					}).then(function() {
+						// add a button that uses mustache for rendering the template (string templating)
 						return time(function() {
 							test.mustache = new template.Mustache({
 								label: 'mustache template'
 							}).placeAt('mustache');
 						}, 'creating mustache button');
 					}).then(function() {
-						test.setLabels('tested');
+						// update the labels for all the buttons
+						test.setLabels();
 					});
 				},
-				
-				setLabels: function (label) {
+
+				setLabels: function () {
+					// a list of our buttons
 					var arr = ['dijit', 'dtlDom', 'dtlString', 'mustache'],
 						prev, current;
-						
+
+					// tests setting a label for a single button
 					function setLabel(name) {
-						var i = 1e4;
+						var i = 1000;
+
+						// return the Deferred from the test
 						return time(function () {
-							var w = test[name];
-							while(i--){
+							var w = test[name],
+								label, dfd;
+
+							// use a Deferred to indicate when the browser has had a chance
+							// to render the updated label
+							function setLabelDfd(label) {
+								var dfd = new dojo.Deferred();
 								w.set('label', label);
+								setTimeout(function () {
+									dfd.resolve();
+								}, 0);
+								return dfd;
 							}
-						}, 'set label for ' + name + ' to ' + label);
+
+
+							// set the label 1000 times
+							while(i--){
+								label = i || 'tested';
+								if(dfd){
+									dfd.addCallback(dojo.partial(setLabelDfd, label));
+								}
+								else {
+									dfd = setLabelDfd(label);
+								}
+							}
+
+							return dfd;
+						}, 'set label for ' + name);
 					}
-					
+
+					// test each button
 					while (current = arr.shift()) {
 						if (prev) {
 							prev.addCallback(d.partial(setLabel, current));
@@ -92,9 +134,9 @@
 					}
 				}
 			});
-			
+
 			d.ready(test, 'init');
-		
+
 		</script>
     </head>
     <body class="claro">
