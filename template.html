@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en-us">
+    <head>
+    	<meta charset="utf-8" />
+        <title>templates</title>
+		
+		<link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dojo/resources/dojo.css">
+		<link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dijit/themes/claro/claro.css">
+		
+		<script>
+			var djConfig = {
+				baseUrl: './',
+				modulePaths: {
+					template: 'template'
+				}
+			};
+		</script>
+
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dojo/dojo.xd.js"></script>
+		
+		<script>
+			dojo.require('template.Dijit');
+			dojo.require('template.DtlDom');
+			dojo.require('template.DtlString');
+			dojo.require('template.Mustache');
+			
+			var test = {},
+				d = dojo;
+			
+			function time(fn, label) {
+				var start = new Date().getTime(),
+					dfd = new d.Deferred();
+				fn();
+				setTimeout(function() {
+					var end = new Date().getTime(), result = (end - start) / 1000;
+					console.log(label, ' ', result);
+					dfd.resolve();
+				}, 0);
+				return dfd;
+			}
+			
+			d.mixin(test, {
+				init: function() {
+					time(function() {
+						test.dijit = new template.Dijit({
+							label: 'dijit._Templated'
+						}).placeAt('dijit');
+					}, 'creating dijit._Templated button').then(function() {
+						return time(function() {
+							test.dtlDom = new template.DtlDom({
+								label: 'dtl DOM template'
+							}, d.create('div', null, 'dtlDom'));
+						}, 'creating dtl _DomTemplated button');
+					}).then(function() {
+						return time(function() {
+							test.dtlString = new template.DtlString({
+								label: 'dtl String template'
+							}).placeAt('dtlString');
+						}, 'creating dtl _Templated button');
+					}).then(function() {
+						return time(function() {
+							test.mustache = new template.Mustache({
+								label: 'mustache template'
+							}).placeAt('mustache');
+						}, 'creating mustache button');
+					}).then(function() {
+						test.setLabels('tested');
+					});
+				},
+				
+				setLabels: function (label) {
+					var arr = ['dijit', 'dtlDom', 'dtlString', 'mustache'],
+						prev, current;
+						
+					function setLabel(name) {
+						var i = 1e4;
+						return time(function () {
+							var w = test[name];
+							while(i--){
+								w.set('label', label);
+							}
+						}, 'set label for ' + name + ' to ' + label);
+					}
+					
+					while (current = arr.shift()) {
+						if (prev) {
+							prev.addCallback(d.partial(setLabel, current));
+						}
+						else {
+							prev = setLabel(current);
+						}
+					}
+				}
+			});
+			
+			d.ready(test, 'init');
+		
+		</script>
+    </head>
+    <body class="claro">
+        <h1>templates</h1>
+		<div id="control"></div>
+		<div id="dijit"></div>
+		<div id="dtlDom"></div>
+		<div id="dtlString"></div>
+		<div id="mustache"></div>
+    </body>
+</html>
