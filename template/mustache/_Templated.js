@@ -10,7 +10,7 @@ dojo.declare('template.mustache._Templated', dijit._Templated, {
 	buildRendering: function () {
 		var node = dojo._toDom(dojo.trim(template.mustache(this.templateString, this)));
 
-		// ignoring attaching template nodes and widgetsInTemplate for now
+		// ignoring widgetsInTemplate for now
 		this._attachTemplateNodes(node);
 
 		if(this.domNode){
